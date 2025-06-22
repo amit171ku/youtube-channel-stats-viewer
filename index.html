@@ -4,17 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>YouTube Channel Stats Viewer</title>
-  <!-- Google Fonts: Poppins + Source Sans Pro -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&family=Source+Sans+Pro:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <!-- Vanta.js NET effect dependencies -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
 </head>
 <body>
-  <!-- 3D Animated Background -->
   <div id="vanta-bg" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:-1;"></div>
-
   <div class="container glass-3d">
     <h1>YouTube Channel Stats Viewer</h1>
     <form id="channel-form">
@@ -24,6 +20,15 @@
     <div id="channel-info" class="card-3d"></div>
     <canvas id="stats-chart"></canvas>
     <div id="top-videos" class="card-3d"></div>
+
+    <!-- Analytics Section -->
+    <section id="analytics">
+      <div id="avg-views" class="analytics-box"></div>
+      <div id="upload-frequency" class="analytics-box"></div>
+      <canvas id="views-line-chart"></canvas>
+      <canvas id="category-pie-chart"></canvas>
+      <button id="export-csv-btn">Export Video Stats to CSV</button>
+    </section>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
