@@ -116,11 +116,11 @@ function showUploadFrequency(videos) {
 }
 
 // --- Chart.js Visualizations ---
-
 function renderViewsLineChart(videos) {
+  const recentVideos = videos.slice(0, 10); // सिर्फ 10 latest videos
   const ctx = document.getElementById('views-line-chart').getContext('2d');
-  const labels = videos.map(v => v.snippet.title);
-  const data = videos.map(v => Number(v.statistics.viewCount));
+  const labels = recentVideos.map(v => v.snippet.title.length > 15 ? v.snippet.title.slice(0, 15) + "..." : v.snippet.title);
+  const data = recentVideos.map(v => Number(v.statistics.viewCount));
   if (window.viewsLineChart) window.viewsLineChart.destroy();
   window.viewsLineChart = new Chart(ctx, {
     type: 'line',
@@ -134,7 +134,22 @@ function renderViewsLineChart(videos) {
         fill: true,
       }]
     },
-    options: { responsive: true }
+    options: {
+      responsive: true,
+      scales: {
+        x: {
+          ticks: {
+            autoSkip: true,
+            maxRotation: 45,
+            minRotation: 30,
+            callback: function(value, index, values) {
+              const label = this.getLabelForValue(value);
+              return label.length > 15 ? label.slice(0, 15) + "..." : label;
+            }
+          }
+        }
+      }
+    }
   });
 }
 
