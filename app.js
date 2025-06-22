@@ -120,22 +120,47 @@ function renderViewsLineChart(videos) {
   const recentVideos = videos.slice(0, 10); // सिर्फ 10 latest videos
   const ctx = document.getElementById('views-line-chart').getContext('2d');
   const labels = recentVideos.map(v => v.snippet.title.length > 15 ? v.snippet.title.slice(0, 15) + "..." : v.snippet.title);
-  const data = recentVideos.map(v => Number(v.statistics.viewCount));
+  const views = recentVideos.map(v => Number(v.statistics.viewCount));
+  const likes = recentVideos.map(v => Number(v.statistics.likeCount || 0));
+  const comments = recentVideos.map(v => Number(v.statistics.commentCount || 0));
+
   if (window.viewsLineChart) window.viewsLineChart.destroy();
   window.viewsLineChart = new Chart(ctx, {
     type: 'line',
     data: {
       labels,
-      datasets: [{
-        label: 'Views',
-        data,
-        borderColor: 'blue',
-        backgroundColor: 'rgba(0,0,255,0.1)',
-        fill: true,
-      }]
+      datasets: [
+        {
+          label: 'Views',
+          data: views,
+          borderColor: 'blue',
+          backgroundColor: 'rgba(0,0,255,0.07)',
+          fill: true,
+          tension: 0.3
+        },
+        {
+          label: 'Likes',
+          data: likes,
+          borderColor: 'green',
+          backgroundColor: 'rgba(0,255,0,0.07)',
+          fill: false,
+          tension: 0.3
+        },
+        {
+          label: 'Comments',
+          data: comments,
+          borderColor: 'orange',
+          backgroundColor: 'rgba(255,165,0,0.07)',
+          fill: false,
+          tension: 0.3
+        }
+      ]
     },
     options: {
       responsive: true,
+      plugins: {
+        legend: { display: true }
+      },
       scales: {
         x: {
           ticks: {
@@ -152,7 +177,6 @@ function renderViewsLineChart(videos) {
     }
   });
 }
-
 async function fetchCategoryNames() {
   const url = `https://www.googleapis.com/youtube/v3/videoCategories?part=snippet&regionCode=IN&key=${API_KEY}`;
   const res = await fetch(url);
