@@ -1,74 +1,865 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>YouTube Channel Stats Viewer</title>
-  
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&family=Source+Sans+Pro:wght@400;600&display=swap" rel="stylesheet" />
-  
-  <!-- External Libraries -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
-  <!-- Link to external CSS file -->
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>YT Lens Pro — YouTube Channel Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{
+  --red:#ff3b3b;--red-dim:rgba(255,59,59,0.13);--red-glow:rgba(255,59,59,0.3);
+  --gold:#ffc107;--teal:#00e5c0;--purple:#a78bfa;--blue:#3b82f6;
+  --surface:#0d0e12;--surface2:#13151c;--surface3:#1a1d28;--surface4:#222639;
+  --border:rgba(255,255,255,0.07);--border-strong:rgba(255,255,255,0.13);
+  --text:#f0f0f5;--text-muted:#7a7d92;--text-dim:#4a4d62;
+  --radius:16px;--radius-sm:10px;
+  --font-display:'Syne',sans-serif;--font-mono:'DM Mono',monospace;--font-body:'DM Sans',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--surface);color:var(--text);font-family:var(--font-body);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,59,59,0.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,59,59,0.022) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;z-index:0}
+.orb{position:fixed;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0;animation:drift 20s ease-in-out infinite}
+.orb-1{width:520px;height:520px;background:radial-gradient(circle,rgba(255,59,59,0.11),transparent 70%);top:-160px;right:-120px}
+.orb-2{width:420px;height:420px;background:radial-gradient(circle,rgba(0,229,192,0.07),transparent 70%);bottom:-120px;left:-100px;animation-delay:-10s}
+@keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(28px,-18px) scale(1.04)}66%{transform:translate(-18px,26px) scale(0.96)}}
+#app{position:relative;z-index:1;max-width:1060px;margin:0 auto;padding:36px 20px 80px}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:36px;flex-wrap:wrap;gap:10px}
+.brand{display:flex;align-items:baseline;gap:9px}
+.brand-logo{font-family:var(--font-display);font-weight:800;font-size:1.65rem;letter-spacing:-.5px;background:linear-gradient(120deg,#fff 0%,var(--red) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.brand-badge{font-family:var(--font-mono);font-size:.6rem;color:var(--red);background:var(--red-dim);border:1px solid var(--red);padding:2px 8px;border-radius:99px;letter-spacing:1px;text-transform:uppercase;position:relative;top:-4px}
+.topbar-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.icon-btn{background:var(--surface3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-muted);height:36px;min-width:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.85rem;transition:all .2s;padding:0 10px;gap:5px;font-family:var(--font-body)}
+.icon-btn:hover{background:var(--surface4);color:var(--text);border-color:var(--border-strong)}
+.main-tabs{display:flex;gap:3px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:28px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.main-tabs::-webkit-scrollbar{display:none}
+.tab-btn{flex:1;min-width:max-content;background:none;border:none;color:var(--text-muted);font-family:var(--font-body);font-size:.78rem;font-weight:500;padding:8px 8px;border-radius:12px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.tab-btn.active{background:var(--red);color:#fff;box-shadow:0 2px 10px var(--red-glow)}
+.tab-btn:hover:not(.active){background:var(--surface3);color:var(--text)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+.hero{text-align:center;margin-bottom:30px}
+.hero-eyebrow{font-family:var(--font-mono);font-size:.68rem;color:var(--red);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;display:block}
+.hero h2{font-family:var(--font-display);font-size:clamp(1.7rem,4vw,2.8rem);font-weight:800;line-height:1.1;letter-spacing:-1px;color:#fff;margin-bottom:8px}
+.hero h2 .grad{background:linear-gradient(90deg,var(--red),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{color:var(--text-muted);font-size:.88rem;max-width:400px;margin:0 auto 26px;line-height:1.6}
+.search-wrap{position:relative;max-width:560px;margin:0 auto;display:flex;gap:9px}
+.search-icon{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:.85rem;pointer-events:none;z-index:1}
+#channel-input{flex:1;background:var(--surface3);border:1px solid var(--border-strong);border-radius:var(--radius);padding:14px 16px 14px 40px;font-family:var(--font-body);font-size:.9rem;color:var(--text);outline:none;transition:all .25s}
+#channel-input::placeholder{color:var(--text-dim)}
+#channel-input:focus{border-color:var(--red);background:var(--surface4);box-shadow:0 0 0 3px var(--red-dim)}
+.btn-search{background:var(--red);border:none;border-radius:var(--radius);color:#fff;font-family:var(--font-display);font-weight:700;font-size:.88rem;padding:0 24px;cursor:pointer;white-space:nowrap;transition:all .2s;box-shadow:0 4px 18px var(--red-glow)}
+.btn-search:hover{background:#e03030;transform:translateY(-1px)}
+.btn-search:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.quick-chips{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chip{font-family:var(--font-mono);font-size:.63rem;background:var(--surface3);border:1px solid var(--border);border-radius:99px;padding:4px 12px;color:var(--text-muted);cursor:pointer;transition:all .2s}
+.chip:hover{border-color:var(--red);color:var(--red);background:var(--red-dim)}
+#status-msg{text-align:center;padding:12px;border-radius:var(--radius-sm);font-size:.82rem;font-family:var(--font-mono);display:none;margin-bottom:16px}
+#status-msg.error{background:rgba(255,59,59,.1);border:1px solid var(--red);color:var(--red)}
+#status-msg.loading{background:var(--surface3);border:1px solid var(--border);color:var(--text-muted);animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+#channel-info{display:none;margin-bottom:18px}
+.profile-card{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:20px 24px;display:flex;gap:16px;align-items:flex-start;position:relative;overflow:hidden}
+.profile-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,59,59,.05) 0%,transparent 60%);pointer-events:none}
+.profile-avatar-wrap{position:relative;flex-shrink:0}
+.profile-avatar{width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid var(--border-strong);display:block}
+.verified-badge{position:absolute;bottom:1px;right:1px;background:var(--red);border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:.55rem;color:#fff;border:2px solid var(--surface2)}
+.profile-info{flex:1;min-width:0}
+.profile-name{font-family:var(--font-display);font-size:1.35rem;font-weight:800;color:#fff;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.profile-handle{font-family:var(--font-mono);font-size:.7rem;color:var(--red);margin-bottom:6px}
+.profile-desc{font-size:.78rem;color:var(--text-muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.profile-stats{display:flex;margin-top:12px;flex-wrap:wrap}
+.pstat{flex:1;min-width:60px;text-align:center;padding:8px 4px;background:var(--surface3);border:1px solid var(--border)}
+.pstat:first-child{border-radius:var(--radius-sm) 0 0 var(--radius-sm)}
+.pstat:last-child{border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+.pstat+.pstat{border-left:none}
+.pstat-val{font-family:var(--font-display);font-size:.95rem;font-weight:700;color:#fff}
+.pstat-label{font-family:var(--font-mono);font-size:.54rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.7px;margin-top:2px}
+#metrics-grid{display:none;margin-bottom:18px}
+.metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px}
+.metric-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:15px 13px;position:relative;overflow:hidden;transition:border-color .2s,transform .2s}
+.metric-card:hover{border-color:var(--border-strong);transform:translateY(-2px)}
+.metric-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--accent-color,var(--red));opacity:.5}
+.metric-icon{font-size:1rem;margin-bottom:6px}
+.metric-val{font-family:var(--font-display);font-size:1.25rem;font-weight:800;color:#fff;margin-bottom:2px;line-height:1}
+.metric-label{font-family:var(--font-mono);font-size:.6rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.7px}
+.metric-delta{font-family:var(--font-mono);font-size:.64rem;margin-top:5px;display:inline-block;padding:2px 6px;border-radius:99px}
+.metric-delta.up{color:var(--teal);background:rgba(0,229,192,.1)}
+.metric-delta.neutral{color:var(--text-dim);background:var(--surface3)}
+#charts-section{display:none;margin-bottom:18px}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.chart-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.chart-card.full{grid-column:1/-1}
+.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.chart-title{font-family:var(--font-display);font-size:.85rem;font-weight:700;color:#fff}
+.chart-subtitle{font-family:var(--font-mono);font-size:.6rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.7px;margin-top:2px}
+.chart-badge{font-family:var(--font-mono);font-size:.62rem;color:var(--text-muted);background:var(--surface3);border:1px solid var(--border);padding:2px 9px;border-radius:99px}
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.filter-input{background:var(--surface3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 14px;font-family:var(--font-body);font-size:.8rem;color:var(--text);outline:none;transition:all .2s;flex:1;min-width:130px}
+.filter-input:focus{border-color:var(--red);box-shadow:0 0 0 2px var(--red-dim)}
+.filter-select{background:var(--surface3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;font-family:var(--font-mono);font-size:.72rem;color:var(--text);outline:none;cursor:pointer}
+.filter-count{font-family:var(--font-mono);font-size:.68rem;color:var(--text-dim);white-space:nowrap}
+#top-videos-section{display:none;margin-bottom:18px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.section-title{font-family:var(--font-display);font-size:.95rem;font-weight:700;color:#fff}
+.section-count{font-family:var(--font-mono);font-size:.66rem;color:var(--text-dim);background:var(--surface3);border:1px solid var(--border);padding:3px 10px;border-radius:99px}
+.video-table{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.video-table-head{display:grid;grid-template-columns:34px 1fr 96px 86px 80px 58px;gap:10px;padding:10px 18px;background:var(--surface3);border-bottom:1px solid var(--border)}
+.vth{font-family:var(--font-mono);font-size:.58rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.7px}
+.video-row{display:grid;grid-template-columns:34px 1fr 96px 86px 80px 58px;gap:10px;padding:12px 18px;border-bottom:1px solid var(--border);align-items:center;transition:background .15s;text-decoration:none;color:inherit}
+.video-row:last-child{border-bottom:none}
+.video-row:hover{background:var(--surface3)}
+.vr-rank{font-family:var(--font-mono);font-size:.72rem;color:var(--text-dim);text-align:center}
+.vr-rank.top{color:var(--gold);font-weight:600}
+.vr-info{display:flex;align-items:center;gap:10px;min-width:0}
+.vr-thumb{width:52px;height:33px;border-radius:5px;object-fit:cover;flex-shrink:0;background:var(--surface4)}
+.vr-title{font-size:.78rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}
+.vr-date{font-family:var(--font-mono);font-size:.6rem;color:var(--text-dim);margin-top:2px}
+.vr-num{font-family:var(--font-mono);font-size:.76rem;color:var(--text);text-align:right}
+.vr-bar-wrap{display:flex;align-items:center;gap:6px}
+.vr-bar{flex:1;height:3px;background:var(--surface4);border-radius:2px;overflow:hidden}
+.vr-bar-fill{height:100%;background:var(--red);border-radius:2px}
+.vr-er{font-family:var(--font-mono);font-size:.68rem;color:var(--teal);text-align:right}
+.no-results{text-align:center;padding:30px;color:var(--text-dim);font-family:var(--font-mono);font-size:.78rem}
+.bt-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.bt-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.bt-title{font-family:var(--font-display);font-size:.88rem;font-weight:700;color:#fff;margin-bottom:14px}
+.bt-heatmap{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.bt-day{border-radius:6px;height:34px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:.55rem;font-weight:500;cursor:default;transition:transform .15s}
+.bt-day:hover{transform:scale(1.1)}
+.bt-legend{display:flex;justify-content:space-between;margin-top:8px}
+.bt-legend span{font-family:var(--font-mono);font-size:.56rem;color:var(--text-dim)}
+.bt-insight{background:var(--surface3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-top:12px}
+.bt-insight-label{font-family:var(--font-mono);font-size:.58rem;color:var(--red);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px}
+.bt-insight-val{font-family:var(--font-display);font-size:1rem;font-weight:700;color:#fff}
+.bt-insight-sub{font-family:var(--font-mono);font-size:.64rem;color:var(--text-muted);margin-top:2px}
+.hour-bars{display:flex;gap:2px;align-items:flex-end;height:60px;margin-top:4px}
+.hour-bar{flex:1;border-radius:3px 3px 0 0;min-height:4px;cursor:default}
+.hour-labels{display:flex;justify-content:space-between;margin-top:4px}
+.hour-labels span{font-family:var(--font-mono);font-size:.5rem;color:var(--text-dim)}
+.cmp-search-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.cmp-input-wrap{display:flex;gap:8px}
+.cmp-channel-input{flex:1;background:var(--surface3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;font-family:var(--font-body);font-size:.82rem;color:var(--text);outline:none;transition:all .2s}
+.cmp-channel-input:focus{border-color:var(--teal);box-shadow:0 0 0 2px rgba(0,229,192,.15)}
+.cmp-label{font-family:var(--font-mono);font-size:.62rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px}
+.btn-cmp{background:var(--teal);border:none;border-radius:var(--radius-sm);color:#0d0e12;font-family:var(--font-display);font-weight:700;font-size:.8rem;padding:0 16px;cursor:pointer;transition:all .2s;height:40px;flex-shrink:0}
+.btn-cmp:hover{filter:brightness(1.1)}
+.btn-cmp:disabled{opacity:.5;cursor:not-allowed}
+.compare-cards{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;margin-bottom:14px;align-items:start}
+.compare-stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:18px}
+.csc-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.csc-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid var(--border-strong)}
+.csc-name{font-family:var(--font-display);font-size:.88rem;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px}
+.csc-handle{font-family:var(--font-mono);font-size:.6rem;color:var(--text-dim);margin-top:2px}
+.csc-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.csc-row:last-child{border-bottom:none}
+.csc-label{font-family:var(--font-mono);font-size:.64rem;color:var(--text-dim)}
+.csc-val{font-family:var(--font-display);font-size:.84rem;font-weight:700}
+.csc-val.winner{color:var(--teal)}
+.csc-val.loser{color:var(--text-dim)}
+.vs-divider{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:10px 0}
+.vs-label{font-family:var(--font-display);font-size:1.3rem;font-weight:800;color:var(--red);text-shadow:0 0 18px var(--red-glow)}
+.score-banner{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center;margin-bottom:14px}
+.score-title{font-family:var(--font-mono);font-size:.62rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:16px}
+.score-bars{display:flex;justify-content:center;align-items:flex-end;gap:36px;height:80px}
+.score-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:5px}
+.score-bar-num{font-family:var(--font-display);font-size:1.05rem;font-weight:800;color:#fff}
+.score-bar-fill{width:50px;border-radius:6px 6px 0 0}
+.score-bar-fill.c1{background:var(--red)}
+.score-bar-fill.c2{background:var(--teal)}
+.score-bar-label{font-family:var(--font-mono);font-size:.58rem;color:var(--text-muted);white-space:nowrap}
+.winner-badge{margin-top:12px;font-family:var(--font-display);font-size:.92rem;font-weight:700;color:var(--gold)}
+#cmp-result{display:none}
+.ai-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:22px}
+.ai-dot{width:7px;height:7px;border-radius:50%;background:var(--red);animation:blink 2s ease-in-out infinite;flex-shrink:0}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.ai-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ai-label{font-family:var(--font-display);font-size:1rem;font-weight:700;color:#fff}
+.ai-sublabel{font-family:var(--font-mono);font-size:.62rem;color:var(--text-dim);margin-top:2px}
+.ai-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.ai-chip{font-family:var(--font-mono);font-size:.65rem;background:var(--surface3);border:1px solid var(--border);border-radius:99px;padding:5px 12px;color:var(--text-muted);cursor:pointer;transition:all .2s}
+.ai-chip:hover,.ai-chip.active{border-color:var(--red);color:var(--red);background:var(--red-dim)}
+.ai-input-row{display:flex;gap:9px}
+#ai-input{flex:1;background:var(--surface3);border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:11px 14px;font-family:var(--font-body);font-size:.82rem;color:var(--text);outline:none;transition:all .2s}
+#ai-input:focus{border-color:var(--red);box-shadow:0 0 0 2px var(--red-dim)}
+#ai-btn{background:var(--red);border:none;border-radius:var(--radius-sm);color:#fff;font-family:var(--font-display);font-weight:700;font-size:.8rem;padding:0 18px;cursor:pointer;transition:all .2s;white-space:nowrap}
+#ai-btn:hover{background:#e03030}
+#ai-btn:disabled{opacity:.5;cursor:not-allowed}
+#ai-card{display:none;margin-top:14px;background:var(--surface3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px}
+.ai-card-hdr{font-family:var(--font-mono);font-size:.6rem;color:var(--red);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+#ai-body{font-size:.83rem;color:var(--text-muted);line-height:1.75;white-space:pre-wrap}
+.empty-state{text-align:center;padding:52px 20px;color:var(--text-dim);font-family:var(--font-mono);font-size:.76rem}
+.empty-icon{font-size:2rem;margin-bottom:10px;display:block;opacity:.35}
+#actions-section{display:none;gap:9px;flex-wrap:wrap;margin-bottom:18px}
+.btn-action{background:var(--surface3);border:1px solid var(--border-strong);border-radius:var(--radius-sm);color:var(--text-muted);font-family:var(--font-body);font-size:.8rem;padding:9px 18px;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-action:hover{background:var(--surface4);color:var(--text)}
+.btn-action.primary{background:var(--red-dim);border-color:var(--red);color:var(--red)}
+.btn-action.primary:hover{background:var(--red);color:#fff}
+.saved-bar-wrap{margin-bottom:14px;display:none}
+.saved-lbl{font-family:var(--font-mono);font-size:.6rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.saved-bar{display:flex;flex-wrap:wrap;gap:6px}
+.saved-chip{font-family:var(--font-mono);font-size:.64rem;background:var(--surface3);border:1px solid var(--border);border-radius:99px;padding:4px 12px;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .2s}
+.saved-chip:hover{border-color:var(--teal);color:var(--teal)}
+.saved-del{color:var(--text-dim);font-size:.7rem;line-height:1}
+.saved-del:hover{color:var(--red)}
+.footer{margin-top:50px;padding-top:20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.footer-brand{font-family:var(--font-display);font-size:.75rem;font-weight:700;color:var(--text-dim)}
+.footer-links{display:flex;gap:18px}
+.footer-links a{font-family:var(--font-mono);font-size:.66rem;color:var(--text-dim);text-decoration:none;text-transform:uppercase;letter-spacing:.7px;transition:color .2s}
+.footer-links a:hover{color:var(--red)}
+.fade-in{opacity:0;transform:translateY(13px);transition:opacity .45s ease,transform .45s ease}
+.fade-in.visible{opacity:1;transform:translateY(0)}
+@media(max-width:680px){
+  .metrics-row{grid-template-columns:repeat(2,1fr)}
+  .charts-grid{grid-template-columns:1fr}
+  .chart-card.full{grid-column:auto}
+  .video-table-head,.video-row{grid-template-columns:30px 1fr 76px 64px}
+  .vth:nth-child(5),.vth:nth-child(6),.video-row .vr-bar-wrap,.video-row .vr-er{display:none}
+  .profile-card{flex-direction:column;gap:12px}
+  .cmp-search-row{grid-template-columns:1fr}
+  .compare-cards{grid-template-columns:1fr;gap:10px}
+  .vs-divider{flex-direction:row;padding:0}
+  .bt-grid{grid-template-columns:1fr}
+}
+@media(max-width:420px){
+  .tab-btn{font-size:.7rem;padding:7px 5px}
+}
+</style>
 </head>
 <body>
-  <div id="vanta-bg"></div>
-  <div class="container glass-3d" role="main" aria-label="YouTube Channel Stats Viewer">
-    <header>
-      <h1>YouTube Channel Stats Viewer</h1>
-      <button id="dark-mode-toggle" aria-label="Toggle Dark and Light mode">🌙</button>
-    </header>
-    <form id="channel-form" aria-label="YouTube channel input form" autocomplete="off">
-      <input class="input-3d" type="text" id="channel-input" placeholder="Enter Channel ID or Username" required aria-required="true" />
-      <button class="btn3D" type="submit" aria-label="Get channel stats">
-        <span class="btnLayer">🔍 Get Stats</span>
-      </button>
-    </form>
-    <div id="channel-info" class="card-3d" aria-live="polite" aria-atomic="true"></div>
-    <canvas id="stats-chart" role="img" aria-label="Channel statistics chart"></canvas>
-    <div id="top-videos" class="card-3d" aria-live="polite"></div>
-    <section id="analytics">
-      <div id="avg-views" class="analytics-box"></div>
-      <div id="upload-frequency" class="analytics-box"></div>
-      <canvas id="views-line-chart" aria-label="Video views over time line chart"></canvas>
-      <canvas id="category-pie-chart" aria-label="Video category distribution pie chart"></canvas>
-      <button id="export-csv-btn" type="button">Export Video Stats to CSV</button>
-    </section>
-    <footer>
-      <p>Created by Amit Sharma | <a href="https://linkedin.com/in/amit-sharma174" target="_blank" rel="noopener">LinkedIn</a> | <a href="https://github.com/amit171ku" target="_blank" rel="noopener">GitHub</a></p>
-    </footer>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div id="app">
+  <div class="topbar">
+    <div class="brand">
+      <span class="brand-logo">YT Lens</span>
+      <span class="brand-badge">Pro</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" id="lang-btn">🌐 <span id="lang-lbl">EN</span></button>
+      <button class="icon-btn" id="theme-btn">🌙</button>
+    </div>
   </div>
 
-  <script>
-    VANTA.NET({
-      el: "#vanta-bg",
-      mouseControls: true,
-      touchControls: true,
-      color: 0x3e38d6,
-      backgroundColor: 0x181c22,
-      points: 12.0,
-      maxDistance: 22.0,
-      spacing: 18.0
-    });
+  <div class="main-tabs">
+    <button class="tab-btn active" data-tab="analytics">📊 <span data-t="tab_analytics">Analytics</span></button>
+    <button class="tab-btn" data-tab="compare">⚔️ <span data-t="tab_compare">Compare</span></button>
+    <button class="tab-btn" data-tab="besttime">🕐 <span data-t="tab_besttime">Best Time</span></button>
+    <button class="tab-btn" data-tab="ai">🤖 <span data-t="tab_ai">AI Insights</span></button>
+  </div>
 
-    // Dark mode toggle
-    const toggleBtn = document.getElementById('dark-mode-toggle');
-    const body = document.body;
-    toggleBtn.addEventListener('click', () => {
-      body.classList.toggle('light-mode');
-      if(body.classList.contains('light-mode')) {
-        toggleBtn.textContent = '🌞';
-      } else {
-        toggleBtn.textContent = '🌙';
-      }
-    });
-  </script>
+  <!-- TAB: ANALYTICS -->
+  <div class="tab-panel active" id="tab-analytics">
+    <div class="hero fade-in visible">
+      <span class="hero-eyebrow" data-t="eyebrow">Channel Intelligence</span>
+      <h2><span class="grad" data-t="hero_hl">Decode</span> <span data-t="hero_any"> any YouTube channel</span></h2>
+      <p data-t="hero_sub">Deep analytics: subscribers, views, engagement rates &amp; top content.</p>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="channel-input" autocomplete="off" spellcheck="false"/>
+        <button class="btn-search" id="search-btn">Analyze</button>
+      </div>
+      <div class="quick-chips">
+        <span class="chip" data-channel="UCVHFbw7woebWNOoGSbFDaZA">MrBeast</span>
+        <span class="chip" data-channel="UCnUYZLuoy1rq1aVMwx4aTzw">Kurzgesagt</span>
+        <span class="chip" data-channel="UCbmNph6atAoGfqLoCL_duAg">Veritasium</span>
+        <span class="chip" data-channel="UCX6OQ3DkcsbYNE6H8uQQuVA">MrBeast Gaming</span>
+      </div>
+    </div>
+    <div id="saved-wrap" class="saved-bar-wrap">
+      <div class="saved-lbl" data-t="saved_lbl">Saved Channels</div>
+      <div class="saved-bar" id="saved-bar"></div>
+    </div>
+    <div id="status-msg"></div>
+    <div id="channel-info" class="fade-in"></div>
+    <div id="metrics-grid" class="fade-in"></div>
+    <div id="charts-section" class="fade-in">
+      <div class="charts-grid">
+        <div class="chart-card full">
+          <div class="chart-header">
+            <div><div class="chart-title" data-t="c_views">Views &amp; Engagement Over Time</div><div class="chart-subtitle" data-t="c_views_sub">Latest 15 uploads</div></div>
+            <span class="chart-badge">recent</span>
+          </div>
+          <canvas id="views-line-chart" height="100"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header"><div><div class="chart-title" data-t="c_cat">Content Categories</div><div class="chart-subtitle" data-t="c_cat_sub">Distribution</div></div></div>
+          <canvas id="category-pie-chart" height="200"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header"><div><div class="chart-title" data-t="c_upload">Upload Activity</div><div class="chart-subtitle" data-t="c_upload_sub">Videos per month</div></div></div>
+          <canvas id="upload-bar-chart" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+    <div id="top-videos-section" class="fade-in"></div>
+    <div id="actions-section"></div>
+  </div>
 
-  <script src="app.js"></script>
+  <!-- TAB: COMPARE -->
+  <div class="tab-panel" id="tab-compare">
+    <div style="margin-bottom:18px">
+      <div style="font-family:var(--font-display);font-size:1.15rem;font-weight:800;color:#fff;margin-bottom:3px" data-t="cmp_title">Channel vs Channel</div>
+      <div style="font-family:var(--font-mono);font-size:.66rem;color:var(--text-dim)" data-t="cmp_sub">Enter two Channel IDs or @handles to compare head-to-head</div>
+    </div>
+    <div class="cmp-search-row">
+      <div>
+        <div class="cmp-label" data-t="cmp_ch1">Channel 1</div>
+        <div class="cmp-input-wrap">
+          <input class="cmp-channel-input" id="cmp-1" placeholder="@handle or Channel ID" autocomplete="off"/>
+          <button class="btn-cmp" id="cmp-btn">⚔️ <span data-t="cmp_btn">Compare</span></button>
+        </div>
+      </div>
+      <div>
+        <div class="cmp-label" data-t="cmp_ch2">Channel 2</div>
+        <input class="cmp-channel-input" id="cmp-2" placeholder="@handle or Channel ID" autocomplete="off"/>
+      </div>
+    </div>
+    <div id="cmp-status" style="font-family:var(--font-mono);font-size:.76rem;color:var(--text-muted);text-align:center;padding:8px;display:none"></div>
+    <div id="cmp-result">
+      <div id="cmp-cards" class="compare-cards"></div>
+      <div id="cmp-score-wrap"></div>
+      <div class="chart-card" style="margin-bottom:14px">
+        <div class="chart-header"><div><div class="chart-title" data-t="cmp_radar">Performance Radar</div><div class="chart-subtitle" data-t="cmp_radar_sub">Normalized comparison</div></div></div>
+        <canvas id="cmp-radar" height="130"></canvas>
+      </div>
+    </div>
+    <div id="cmp-empty" class="empty-state"><span class="empty-icon">⚔️</span><span data-t="cmp_empty">Enter two channels and click Compare</span></div>
+  </div>
+
+  <!-- TAB: BEST TIME -->
+  <div class="tab-panel" id="tab-besttime">
+    <div style="margin-bottom:14px">
+      <div style="font-family:var(--font-display);font-size:1.15rem;font-weight:800;color:#fff;margin-bottom:3px" data-t="bt_title">Best Time to Post</div>
+      <div style="font-family:var(--font-mono);font-size:.66rem;color:var(--text-dim)" data-t="bt_sub">Analyzed from upload history &amp; performance data</div>
+    </div>
+    <div id="bt-empty" class="empty-state"><span class="empty-icon">📅</span><span data-t="bt_empty">Analyze a channel first from the Analytics tab</span></div>
+    <div id="bt-content" style="display:none"></div>
+  </div>
+
+  <!-- TAB: AI INSIGHTS -->
+  <div class="tab-panel" id="tab-ai">
+    <div id="ai-empty" class="empty-state"><span class="empty-icon">🤖</span><span data-t="ai_empty">Analyze a channel first, then ask AI anything about it.</span></div>
+    <div id="ai-content" style="display:none">
+      <div class="ai-wrap">
+        <div class="ai-header">
+          <div class="ai-dot"></div>
+          <div>
+            <div class="ai-label" data-t="ai_label">Claude AI Analyst</div>
+            <div class="ai-sublabel" data-t="ai_sub">Powered by Claude · Ask anything about this channel</div>
+          </div>
+        </div>
+        <div class="ai-chips">
+          <span class="ai-chip" data-prompt="What are the strengths and weaknesses of this channel?">💪 Strengths &amp; Weaknesses</span>
+          <span class="ai-chip" data-prompt="What content strategy should this channel follow to grow faster?">🚀 Growth Strategy</span>
+          <span class="ai-chip" data-prompt="Who is the likely target audience for this channel?">🎯 Target Audience</span>
+          <span class="ai-chip" data-prompt="What topics or video formats are working best for this channel?">🎬 Content Analysis</span>
+          <span class="ai-chip" data-prompt="How can this channel improve its engagement rate?">📈 Engagement Tips</span>
+          <span class="ai-chip" data-prompt="Give competitor analysis and differentiation advice for this channel.">⚔️ Competitor Advice</span>
+        </div>
+        <div class="ai-input-row">
+          <input id="ai-input" type="text" autocomplete="off"/>
+          <button id="ai-btn">🤖 <span data-t="ai_btn">Ask AI</span></button>
+        </div>
+        <div id="ai-card">
+          <div class="ai-card-hdr">🤖 AI Response</div>
+          <div id="ai-body"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span class="footer-brand">YT Lens Pro</span>
+    <div class="footer-links">
+      <a href="https://linkedin.com/in/amit-sharma174" target="_blank">LinkedIn</a>
+      <a href="https://github.com/amit171ku" target="_blank">GitHub</a>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_KEY='AIzaSyDII2d6DP-DUPAMetrEFNxZifRxESIF2QI';
+let currentVideos=[],currentChannel=null,allVideos=[],charts={},lang='en',cmpData=[];
+
+// ── TRANSLATIONS ──
+const T={
+  en:{
+    eyebrow:'Channel Intelligence',hero_hl:'Decode',hero_any:' any YouTube channel',
+    hero_sub:'Deep analytics: subscribers, views, engagement rates & top content.',
+    placeholder:'Channel ID, @handle, or username…',search_btn:'Analyze',
+    tab_analytics:'Analytics',tab_compare:'Compare',tab_besttime:'Best Time',tab_ai:'AI Insights',
+    saved_lbl:'Saved Channels',c_views:'Views & Engagement Over Time',c_views_sub:'Latest 15 uploads',
+    c_cat:'Content Categories',c_cat_sub:'Distribution',c_upload:'Upload Activity',c_upload_sub:'Videos per month',
+    cmp_title:'Channel vs Channel',cmp_sub:'Enter two Channel IDs or @handles to compare',
+    cmp_ch1:'Channel 1',cmp_ch2:'Channel 2',cmp_btn:'Compare',cmp_radar:'Performance Radar',
+    cmp_radar_sub:'Normalized comparison',cmp_empty:'Enter two channels and click Compare',
+    bt_title:'Best Time to Post',bt_sub:'Analyzed from upload history & performance data',
+    bt_empty:'Analyze a channel first from the Analytics tab',
+    ai_empty:'Analyze a channel first, then ask AI anything about it.',
+    ai_label:'Claude AI Analyst',ai_sub:'Powered by Claude · Ask anything about this channel',
+    ai_btn:'Ask AI',ai_input_ph:'Ask anything about this channel…',
+    filter_ph:'Search videos…',sort_views:'Most Views',sort_likes:'Most Likes',
+    sort_comments:'Most Comments',sort_date:'Newest First',
+    section_top:'Top Videos by Views',save_ch:'Save Channel',export_csv:'Export CSV',copy_rep:'Copy Summary',
+    ld_ch:'Resolving channel…',ld_data:'Fetching channel data…',ld_vids:'Loading videos…',
+    err_nf:'❌ Channel not found. Try a Channel ID (starts with UC) or @handle.',err_nd:'❌ Could not load channel info.',
+  },
+  hi:{
+    eyebrow:'चैनल इंटेलिजेंस',hero_hl:'विश्लेषण करें',hero_any:' किसी भी YouTube चैनल का',
+    hero_sub:'सब्सक्राइबर, व्यूज, एंगेजमेंट और टॉप कंटेंट का गहरा विश्लेषण।',
+    placeholder:'Channel ID, @हैंडल, या यूजरनेम…',search_btn:'विश्लेषण करें',
+    tab_analytics:'एनालिटिक्स',tab_compare:'तुलना',tab_besttime:'बेस्ट टाइम',tab_ai:'AI इनसाइट्स',
+    saved_lbl:'सेव्ड चैनल',c_views:'व्यूज और एंगेजमेंट',c_views_sub:'नवीनतम 15 वीडियो',
+    c_cat:'कंटेंट कैटेगरी',c_cat_sub:'वितरण',c_upload:'अपलोड गतिविधि',c_upload_sub:'प्रति माह',
+    cmp_title:'चैनल बनाम चैनल',cmp_sub:'दो Channel IDs या @हैंडल दर्ज करें',
+    cmp_ch1:'चैनल 1',cmp_ch2:'चैनल 2',cmp_btn:'तुलना करें',cmp_radar:'परफॉर्मेंस रडार',
+    cmp_radar_sub:'नॉर्मलाइज्ड तुलना',cmp_empty:'दो चैनल दर्ज करें और तुलना करें',
+    bt_title:'पोस्ट करने का बेस्ट समय',bt_sub:'अपलोड हिस्ट्री और परफॉर्मेंस के आधार पर',
+    bt_empty:'पहले Analytics टैब से चैनल एनालाइज करें',
+    ai_empty:'पहले चैनल एनालाइज करें, फिर AI से पूछें।',
+    ai_label:'Claude AI विश्लेषक',ai_sub:'Claude द्वारा संचालित',
+    ai_btn:'AI से पूछें',ai_input_ph:'इस चैनल के बारे में कुछ भी पूछें…',
+    filter_ph:'वीडियो खोजें…',sort_views:'सबसे ज़्यादा व्यूज',sort_likes:'सबसे ज़्यादा लाइक्स',
+    sort_comments:'सबसे ज़्यादा कमेंट',sort_date:'नवीनतम पहले',
+    section_top:'व्यूज के अनुसार टॉप वीडियो',save_ch:'चैनल सेव करें',export_csv:'CSV एक्सपोर्ट',copy_rep:'सारांश कॉपी',
+    ld_ch:'चैनल खोज रहे हैं…',ld_data:'डेटा लाया जा रहा है…',ld_vids:'वीडियो लोड हो रहे हैं…',
+    err_nf:'❌ चैनल नहीं मिला।',err_nd:'❌ चैनल जानकारी लोड नहीं हो सकी।',
+  }
+};
+function applyLang(){
+  document.querySelectorAll('[data-t]').forEach(el=>{const k=el.dataset.t;if(T[lang][k]!==undefined)el.textContent=T[lang][k];});
+  document.getElementById('channel-input').placeholder=T[lang].placeholder;
+  document.getElementById('search-btn').textContent=T[lang].search_btn;
+  document.getElementById('ai-input').placeholder=T[lang].ai_input_ph;
+  document.getElementById('lang-lbl').textContent=lang==='en'?'EN':'HI';
+}
+document.getElementById('lang-btn').addEventListener('click',()=>{lang=lang==='en'?'hi':'en';applyLang();});
+applyLang();
+
+// ── THEME ──
+let isLight=false;
+document.getElementById('theme-btn').addEventListener('click',()=>{
+  isLight=!isLight;
+  const s=document.documentElement.style;
+  if(isLight){
+    s.setProperty('--surface','#f2f3f8');s.setProperty('--surface2','#fff');s.setProperty('--surface3','#e6e8f2');s.setProperty('--surface4','#d8daea');
+    s.setProperty('--border','rgba(0,0,0,0.07)');s.setProperty('--border-strong','rgba(0,0,0,0.13)');
+    s.setProperty('--text','#1a1a2e');s.setProperty('--text-muted','#5a5c72');s.setProperty('--text-dim','#aaa');
+  } else {
+    s.setProperty('--surface','#0d0e12');s.setProperty('--surface2','#13151c');s.setProperty('--surface3','#1a1d28');s.setProperty('--surface4','#222639');
+    s.setProperty('--border','rgba(255,255,255,0.07)');s.setProperty('--border-strong','rgba(255,255,255,0.13)');
+    s.setProperty('--text','#f0f0f5');s.setProperty('--text-muted','#7a7d92');s.setProperty('--text-dim','#4a4d62');
+  }
+  document.getElementById('theme-btn').textContent=isLight?'🌑':'🌙';
+});
+
+// ── TABS ──
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ── CHIPS ──
+document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{document.getElementById('channel-input').value=c.dataset.channel;runSearch();}));
+
+// ── SEARCH ──
+document.getElementById('search-btn').addEventListener('click',runSearch);
+document.getElementById('channel-input').addEventListener('keydown',e=>{if(e.key==='Enter')runSearch();});
+
+async function runSearch(){
+  const raw=document.getElementById('channel-input').value.trim();if(!raw)return;
+  const btn=document.getElementById('search-btn');btn.disabled=true;btn.textContent='⏳';
+  hideAll();showStatus(T[lang].ld_ch,'loading');
+  try{
+    let id=raw;
+    if(raw.startsWith('@'))id=await resolveHandle(raw.slice(1));
+    else if(!raw.startsWith('UC'))id=await getChannelIdFromUsername(raw)||await resolveHandle(raw);
+    if(!id){showStatus(T[lang].err_nf,'error');return;}
+    showStatus(T[lang].ld_data,'loading');
+    const ch=await getChannelInfo(id);
+    if(!ch){showStatus(T[lang].err_nd,'error');return;}
+    showStatus(T[lang].ld_vids,'loading');
+    const vids=await getAllVideos(id);
+    currentVideos=vids;currentChannel=ch;allVideos=[...vids];
+    hideStatus();
+    renderProfile(ch);renderMetrics(vids,ch);await renderCharts(vids);renderTopVideos(vids);renderActions();renderBestTime(vids);
+    document.getElementById('ai-empty').style.display='none';document.getElementById('ai-content').style.display='block';
+    ['channel-info','metrics-grid','charts-section','top-videos-section','actions-section'].forEach((id2,i)=>{
+      const el=document.getElementById(id2);if(!el)return;
+      el.style.display=id2==='actions-section'?'flex':'block';
+      setTimeout(()=>el.classList.add('visible'),i*70);
+    });
+  }catch(e){showStatus('❌ '+e.message,'error');}
+  finally{btn.disabled=false;btn.textContent=T[lang].search_btn;}
+}
+
+// ── API ──
+async function resolveHandle(h){const d=await(await fetch(`https://www.googleapis.com/youtube/v3/channels?part=id&forHandle=${encodeURIComponent(h)}&key=${API_KEY}`)).json();return d.items?.[0]?.id||null;}
+async function getChannelIdFromUsername(u){const d=await(await fetch(`https://www.googleapis.com/youtube/v3/channels?part=id&forUsername=${encodeURIComponent(u)}&key=${API_KEY}`)).json();return d.items?.[0]?.id||null;}
+async function getChannelInfo(id){const d=await(await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${id}&key=${API_KEY}`)).json();return d.items?.[0]||null;}
+async function getAllVideos(channelId){
+  const r1=await(await fetch(`https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${channelId}&key=${API_KEY}`)).json();
+  const uid=r1.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;if(!uid)return[];
+  const r2=await(await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uid}&maxResults=50&key=${API_KEY}`)).json();
+  if(!r2.items?.length)return[];
+  const ids=r2.items.map(i=>i.snippet.resourceId.videoId).join(',');
+  const r3=await(await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${ids}&key=${API_KEY}`)).json();
+  if(!r3.items?.length)return[];
+  return r3.items.sort((a,b)=>Number(b.statistics.viewCount)-Number(a.statistics.viewCount));
+}
+async function fetchCats(){const d=await(await fetch(`https://www.googleapis.com/youtube/v3/videoCategories?part=snippet&regionCode=IN&key=${API_KEY}`)).json();const m={};d.items?.forEach(i=>m[i.id]=i.snippet.title);return m;}
+
+// ── UTILS ──
+function fmt(n){n=Number(n);if(n>=1e9)return(n/1e9).toFixed(1)+'B';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return n.toLocaleString();}
+function fmtD(iso){return new Date(iso).toLocaleDateString('en',{year:'numeric',month:'short',day:'numeric'});}
+function trunc(s,n){return s.length>n?s.slice(0,n)+'…':s;}
+
+// ── PROFILE ──
+function renderProfile(ch){
+  const{title,description,customUrl,thumbnails,publishedAt}=ch.snippet;
+  const{subscriberCount,viewCount,videoCount,hiddenSubscriberCount}=ch.statistics;
+  const subs=hiddenSubscriberCount?'Hidden':fmt(subscriberCount);
+  document.getElementById('channel-info').innerHTML=`
+    <div class="profile-card">
+      <div class="profile-avatar-wrap">
+        <img class="profile-avatar" src="${thumbnails.medium?.url||thumbnails.default?.url}" alt="">
+        <div class="verified-badge">✓</div>
+      </div>
+      <div class="profile-info">
+        <div class="profile-name">${title}</div>
+        <div class="profile-handle">${customUrl||('@'+title.toLowerCase().replace(/\s+/g,''))}</div>
+        <div class="profile-desc">${description||'No description.'}</div>
+        <div class="profile-stats">
+          <div class="pstat"><div class="pstat-val">${subs}</div><div class="pstat-label">Subscribers</div></div>
+          <div class="pstat"><div class="pstat-val">${fmt(viewCount)}</div><div class="pstat-label">Total Views</div></div>
+          <div class="pstat"><div class="pstat-val">${fmt(videoCount)}</div><div class="pstat-label">Videos</div></div>
+          <div class="pstat"><div class="pstat-val">${new Date(publishedAt).getFullYear()}</div><div class="pstat-label">Joined</div></div>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('channel-info').style.display='block';
+}
+
+// ── METRICS ──
+function renderMetrics(vids,ch){
+  if(!vids.length)return;
+  const tv=vids.reduce((s,v)=>s+Number(v.statistics.viewCount),0);
+  const av=Math.round(tv/vids.length);
+  const al=Math.round(vids.reduce((s,v)=>s+Number(v.statistics.likeCount||0),0)/vids.length);
+  const ac=Math.round(vids.reduce((s,v)=>s+Number(v.statistics.commentCount||0),0)/vids.length);
+  const er=av>0?((al+ac)/av*100).toFixed(2):0;
+  const dates=vids.map(v=>new Date(v.snippet.publishedAt)).sort((a,b)=>b-a);
+  const ds=vids.length>=2?(dates[0]-dates[vids.length-1])/86400000||1:1;
+  const pw=((vids.length/ds)*7).toFixed(1),pm=((vids.length/ds)*30).toFixed(1);
+  const best=vids[0];
+  const mx=[
+    {icon:'👁',val:fmt(av),label:'Avg Views/Video',delta:null,color:'var(--red)'},
+    {icon:'👍',val:fmt(al),label:'Avg Likes',delta:null,color:'var(--gold)'},
+    {icon:'💬',val:fmt(ac),label:'Avg Comments',delta:null,color:'var(--teal)'},
+    {icon:'⚡',val:er+'%',label:'Engagement Rate',delta:{txt:'likes+comments/views',cls:'neutral'},color:'var(--purple)'},
+    {icon:'📅',val:pw+'/wk',label:'Upload Frequency',delta:{txt:pm+' per month',cls:'neutral'},color:'var(--teal)'},
+    {icon:'🏆',val:fmt(Number(best.statistics.viewCount)),label:'Best Video Views',delta:{txt:trunc(best.snippet.title,24),cls:'up'},color:'var(--gold)'},
+    {icon:'📊',val:fmt(vids.length),label:'Videos Analyzed',delta:{txt:'from last 50',cls:'neutral'},color:'var(--red)'},
+    {icon:'📈',val:fmt(tv),label:'Total Views (50)',delta:null,color:'var(--purple)'},
+  ];
+  let html='';
+  for(let i=0;i<mx.length;i+=4){
+    html+='<div class="metrics-row">'+mx.slice(i,i+4).map(m=>`<div class="metric-card" style="--accent-color:${m.color}"><div class="metric-icon">${m.icon}</div><div class="metric-val">${m.val}</div><div class="metric-label">${m.label}</div>${m.delta?`<span class="metric-delta ${m.delta.cls}">${m.delta.txt}</span>`:''}</div>`).join('')+'</div>';
+  }
+  document.getElementById('metrics-grid').innerHTML=html;
+  document.getElementById('metrics-grid').style.display='block';
+}
+
+// ── CHARTS ──
+async function renderCharts(vids){
+  Chart.defaults.color='#7a7d92';
+  const recent=[...vids].sort((a,b)=>new Date(b.snippet.publishedAt)-new Date(a.snippet.publishedAt)).slice(0,15);
+  const labels=recent.map(v=>trunc(v.snippet.title,16));
+  const views=recent.map(v=>Number(v.statistics.viewCount));
+  const likes=recent.map(v=>Number(v.statistics.likeCount||0));
+  const comments=recent.map(v=>Number(v.statistics.commentCount||0));
+  if(charts.line)charts.line.destroy();
+  charts.line=new Chart(document.getElementById('views-line-chart').getContext('2d'),{
+    type:'line',data:{labels,datasets:[
+      {label:'Views',data:views,borderColor:'#ff3b3b',backgroundColor:'rgba(255,59,59,0.08)',fill:true,tension:.4,pointRadius:3,pointHoverRadius:6,pointBackgroundColor:'#ff3b3b'},
+      {label:'Likes',data:likes,borderColor:'#ffc107',backgroundColor:'rgba(255,193,7,0.06)',fill:false,tension:.4,pointRadius:2,pointHoverRadius:5},
+      {label:'Comments',data:comments,borderColor:'#00e5c0',backgroundColor:'rgba(0,229,192,0.05)',fill:false,tension:.4,pointRadius:2,pointHoverRadius:5},
+    ]},
+    options:{responsive:true,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{boxWidth:10,font:{family:'DM Mono',size:11}}}},
+      scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{font:{family:'DM Mono',size:10},maxRotation:36}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>fmt(v),font:{family:'DM Mono',size:10}}}}}
+  });
+  const catMap=await fetchCats();
+  const catC={};vids.forEach(v=>{const c=catMap[v.snippet.categoryId]||'Other';catC[c]=(catC[c]||0)+1;});
+  if(charts.pie)charts.pie.destroy();
+  charts.pie=new Chart(document.getElementById('category-pie-chart').getContext('2d'),{
+    type:'doughnut',data:{labels:Object.keys(catC),datasets:[{data:Object.values(catC),backgroundColor:['#ff3b3b','#ffc107','#00e5c0','#a78bfa','#3b82f6','#ec4899','#f97316'],borderWidth:0,hoverOffset:8}]},
+    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:12,font:{family:'DM Mono',size:10}}}}}
+  });
+  const mC={};vids.forEach(v=>{const d=new Date(v.snippet.publishedAt);const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');mC[k]=(mC[k]||0)+1;});
+  const sM=Object.keys(mC).sort();
+  if(charts.bar)charts.bar.destroy();
+  charts.bar=new Chart(document.getElementById('upload-bar-chart').getContext('2d'),{
+    type:'bar',data:{labels:sM.map(m=>{const[y,mo]=m.split('-');return new Date(y,mo-1).toLocaleDateString('en',{month:'short',year:'2-digit'});}),
+      datasets:[{label:'Uploads',data:sM.map(m=>mC[m]),backgroundColor:'rgba(255,59,59,0.7)',borderRadius:5,borderSkipped:false}]},
+    options:{responsive:true,plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{font:{family:'DM Mono',size:10},maxRotation:36}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{stepSize:1,font:{family:'DM Mono',size:10}}}}}
+  });
+  document.getElementById('charts-section').style.display='block';
+}
+
+// ── TOP VIDEOS + FILTER ──
+function renderTopVideos(vids){
+  const sec=document.getElementById('top-videos-section');
+  const maxV=Number(vids[0]?.statistics.viewCount||1);
+  function buildTable(arr){
+    if(!arr.length)return`<div class="no-results">${lang==='hi'?'कोई वीडियो नहीं मिला।':'No videos found.'}</div>`;
+    return`<div class="video-table">
+      <div class="video-table-head"><span class="vth">#</span><span class="vth">${T[lang].section_top}</span><span class="vth" style="text-align:right">Views</span><span class="vth" style="text-align:right">Likes</span><span class="vth">Reach</span><span class="vth" style="text-align:right">ER%</span></div>
+      ${arr.slice(0,20).map((v,i)=>{
+        const vw=Number(v.statistics.viewCount),lk=Number(v.statistics.likeCount||0),cm=Number(v.statistics.commentCount||0);
+        const er=vw>0?((lk+cm)/vw*100).toFixed(2):'0.00';
+        const bp=Math.round(vw/maxV*100);
+        return`<a class="video-row" href="https://www.youtube.com/watch?v=${v.id}" target="_blank" rel="noopener">
+          <span class="vr-rank ${i<3?'top':''}">${i+1}</span>
+          <div class="vr-info"><img class="vr-thumb" src="${v.snippet.thumbnails.medium?.url||v.snippet.thumbnails.default?.url}" alt="" loading="lazy"><div><div class="vr-title">${v.snippet.title}</div><div class="vr-date">${fmtD(v.snippet.publishedAt)}</div></div></div>
+          <span class="vr-num">${fmt(vw)}</span><span class="vr-num">${fmt(lk)}</span>
+          <div class="vr-bar-wrap"><div class="vr-bar"><div class="vr-bar-fill" style="width:${bp}%"></div></div></div>
+          <span class="vr-er">${er}%</span>
+        </a>`;
+      }).join('')}
+    </div>`;
+  }
+  function applyFilter(){
+    const q=(document.getElementById('flt-search')?.value||'').toLowerCase();
+    const sort=document.getElementById('flt-sort')?.value||'views';
+    let filtered=[...allVideos].filter(v=>!q||v.snippet.title.toLowerCase().includes(q));
+    if(sort==='views')filtered.sort((a,b)=>Number(b.statistics.viewCount)-Number(a.statistics.viewCount));
+    else if(sort==='likes')filtered.sort((a,b)=>Number(b.statistics.likeCount||0)-Number(a.statistics.likeCount||0));
+    else if(sort==='comments')filtered.sort((a,b)=>Number(b.statistics.commentCount||0)-Number(a.statistics.commentCount||0));
+    else if(sort==='date')filtered.sort((a,b)=>new Date(b.snippet.publishedAt)-new Date(a.snippet.publishedAt));
+    document.getElementById('tbl-wrap').innerHTML=buildTable(filtered);
+    document.getElementById('flt-count').textContent=`${filtered.length} videos`;
+  }
+  sec.innerHTML=`
+    <div class="section-header">
+      <span class="section-title">${T[lang].section_top}</span>
+      <span class="section-count" id="flt-count">${allVideos.length} videos</span>
+    </div>
+    <div class="filter-bar">
+      <input class="filter-input" id="flt-search" placeholder="${T[lang].filter_ph}"/>
+      <select class="filter-select" id="flt-sort">
+        <option value="views">${T[lang].sort_views}</option>
+        <option value="likes">${T[lang].sort_likes}</option>
+        <option value="comments">${T[lang].sort_comments}</option>
+        <option value="date">${T[lang].sort_date}</option>
+      </select>
+    </div>
+    <div id="tbl-wrap">${buildTable(vids)}</div>`;
+  document.getElementById('flt-search').addEventListener('input',applyFilter);
+  document.getElementById('flt-sort').addEventListener('change',applyFilter);
+  sec.style.display='block';
+}
+
+// ── ACTIONS ──
+function renderActions(){
+  const sec=document.getElementById('actions-section');
+  sec.innerHTML=`
+    <button class="btn-action primary" onclick="exportCSV()">⬇ ${T[lang].export_csv}</button>
+    <button class="btn-action" onclick="copyReport()">📋 ${T[lang].copy_rep}</button>
+    <button class="btn-action" onclick="saveChannel()">🔖 ${T[lang].save_ch}</button>`;
+  sec.style.display='flex';
+}
+
+// ── SAVED ──
+function loadSaved(){try{return JSON.parse(localStorage.getItem('yt_saved')||'[]');}catch{return[];}}
+function saveChannel(){
+  if(!currentChannel)return;
+  const saved=loadSaved(),id=currentChannel.id,name=currentChannel.snippet.title;
+  if(!saved.find(s=>s.id===id)){saved.push({id,name});localStorage.setItem('yt_saved',JSON.stringify(saved));}
+  renderSaved();
+}
+function renderSaved(){
+  const saved=loadSaved(),sw=document.getElementById('saved-wrap'),bar=document.getElementById('saved-bar');
+  if(!saved.length){sw.style.display='none';return;}
+  sw.style.display='block';
+  bar.innerHTML=saved.map(s=>`<span class="saved-chip"><span onclick="loadSavedChannel('${s.id}')">${trunc(s.name,18)}</span><span class="saved-del" onclick="deleteSaved('${s.id}')"> ✕</span></span>`).join('');
+}
+function loadSavedChannel(id){document.getElementById('channel-input').value=id;runSearch();}
+function deleteSaved(id){localStorage.setItem('yt_saved',JSON.stringify(loadSaved().filter(s=>s.id!==id)));renderSaved();}
+renderSaved();
+
+// ── EXPORT / COPY ──
+function exportCSV(){
+  if(!currentVideos.length)return;
+  const hd=['Title','Views','Likes','Comments','Published At','Engagement Rate'];
+  const rows=currentVideos.map(v=>{const vw=Number(v.statistics.viewCount),lk=Number(v.statistics.likeCount||0),cm=Number(v.statistics.commentCount||0);return[`"${v.snippet.title.replace(/"/g,'""')}"`,vw,lk,cm,v.snippet.publishedAt,vw>0?((lk+cm)/vw*100).toFixed(2)+'%':'0%'];});
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([[hd,...rows].map(r=>r.join(',')).join('\n')],{type:'text/csv'}));a.download='yt_lens_stats.csv';a.click();
+}
+function copyReport(){
+  if(!currentVideos.length)return;
+  const name=currentChannel?.snippet.title||'Channel';
+  const av=Math.round(currentVideos.reduce((s,v)=>s+Number(v.statistics.viewCount),0)/currentVideos.length);
+  const al=Math.round(currentVideos.reduce((s,v)=>s+Number(v.statistics.likeCount||0),0)/currentVideos.length);
+  const ac=Math.round(currentVideos.reduce((s,v)=>s+Number(v.statistics.commentCount||0),0)/currentVideos.length);
+  const er=av>0?((al+ac)/av*100).toFixed(2):0;
+  const top=currentVideos[0];
+  navigator.clipboard.writeText(`📊 YT Lens Pro: ${name}\n• Avg Views: ${fmt(av)} | Avg Likes: ${fmt(al)} | Avg Comments: ${fmt(ac)}\n• Engagement Rate: ${er}%\n• Best Video: ${top.snippet.title} (${fmt(Number(top.statistics.viewCount))} views)\n• Analyzed ${currentVideos.length} videos`).then(()=>alert(lang==='hi'?'कॉपी हो गया!':'Copied!'));
+}
+
+// ── BEST TIME ──
+function renderBestTime(vids){
+  const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dV=Array(7).fill(0),dC=Array(7).fill(0),hV=Array(24).fill(0),hC=Array(24).fill(0);
+  vids.forEach(v=>{const d=new Date(v.snippet.publishedAt),vw=Number(v.statistics.viewCount);dV[d.getDay()]+=vw;dC[d.getDay()]++;hV[d.getHours()]+=vw;hC[d.getHours()]++;});
+  const dAvg=dV.map((v,i)=>dC[i]?Math.round(v/dC[i]):0);
+  const hAvg=hV.map((v,i)=>hC[i]?Math.round(v/hC[i]):0);
+  const maxD=Math.max(...dAvg,1),maxH=Math.max(...hAvg,1);
+  const bestD=dAvg.indexOf(Math.max(...dAvg)),bestH=hAvg.indexOf(Math.max(...hAvg));
+  function heat(v,m){const p=v/m;if(p>.8)return'#ff3b3b';if(p>.6)return'#ff7043';if(p>.4)return'#ffc107';if(p>.2)return'rgba(255,193,7,0.4)';return'rgba(255,255,255,0.06)';}
+  const heatmap=DAYS.map((d,i)=>`<div class="bt-day" style="background:${heat(dAvg[i],maxD)}" title="${d}: avg ${fmt(dAvg[i])} views">${d}</div>`).join('');
+  const hourBars=hAvg.map((v,i)=>`<div class="hour-bar" style="height:${Math.max(4,Math.round(v/maxH*56))}px;background:${heat(v,maxH)}" title="${i}:00 → avg ${fmt(v)} views"></div>`).join('');
+  const fmt12=h=>h===0?'12am':h<12?h+'am':h===12?'12pm':(h-12)+'pm';
+  document.getElementById('bt-content').innerHTML=`
+    <div class="bt-grid">
+      <div class="bt-card">
+        <div class="bt-title">📅 Best Day to Upload</div>
+        <div class="bt-heatmap">${heatmap}</div>
+        <div class="bt-legend"><span>↓ Low</span><span>High ↑</span></div>
+        <div class="bt-insight"><div class="bt-insight-label">Best Day</div><div class="bt-insight-val">${DAYS[bestD]}</div><div class="bt-insight-sub">Avg ${fmt(dAvg[bestD])} views</div></div>
+      </div>
+      <div class="bt-card">
+        <div class="bt-title">🕐 Best Hour to Upload</div>
+        <div class="hour-bars">${hourBars}</div>
+        <div class="hour-labels"><span>12am</span><span>6am</span><span>12pm</span><span>6pm</span><span>11pm</span></div>
+        <div class="bt-insight"><div class="bt-insight-label">Best Hour</div><div class="bt-insight-val">${fmt12(bestH)}</div><div class="bt-insight-sub">Avg ${fmt(hAvg[bestH])} views</div></div>
+      </div>
+    </div>
+    <div class="bt-card" style="margin-top:14px">
+      <div class="bt-title">💡 Recommendation</div>
+      <div style="color:var(--text-muted);font-size:.82rem;line-height:1.7;margin-top:8px">
+        Based on <strong style="color:var(--text)">${vids.length} videos</strong>, this channel performs best uploading on
+        <strong style="color:var(--gold)">${DAYS[bestD]}</strong> around <strong style="color:var(--teal)">${fmt12(bestH)}</strong>.
+        That day averages <strong style="color:var(--red)">${fmt(dAvg[bestD])} views</strong>
+        — ${Math.round(dAvg[bestD]/maxD*100)}% of peak performance.
+      </div>
+    </div>`;
+  document.getElementById('bt-empty').style.display='none';
+  document.getElementById('bt-content').style.display='block';
+}
+
+// ── COMPARE ──
+document.getElementById('cmp-btn').addEventListener('click',runCompare);
+async function runCompare(){
+  const r1=document.getElementById('cmp-1').value.trim(),r2=document.getElementById('cmp-2').value.trim();
+  if(!r1||!r2){setCmpStatus('❌ Enter both channels.');return;}
+  const btn=document.getElementById('cmp-btn');btn.disabled=true;btn.textContent='⏳';
+  document.getElementById('cmp-empty').style.display='none';document.getElementById('cmp-result').style.display='none';
+  setCmpStatus(lang==='hi'?'दोनों चैनल लोड हो रहे हैं…':'Loading both channels…');
+  try{
+    async function resolveId(raw){
+      if(raw.startsWith('@'))return await resolveHandle(raw.slice(1));
+      if(!raw.startsWith('UC'))return await getChannelIdFromUsername(raw)||await resolveHandle(raw);
+      return raw;
+    }
+    const[id1,id2]=await Promise.all([resolveId(r1),resolveId(r2)]);
+    if(!id1||!id2){setCmpStatus('❌ One or both channels not found.');return;}
+    const[ch1,ch2,v1,v2]=await Promise.all([getChannelInfo(id1),getChannelInfo(id2),getAllVideos(id1),getAllVideos(id2)]);
+    if(!ch1||!ch2){setCmpStatus('❌ Could not load channel data.');return;}
+    cmpData=[{ch:ch1,vids:v1},{ch:ch2,vids:v2}];
+    setCmpStatus('');renderCmp();
+  }catch(e){setCmpStatus('❌ '+e.message);}
+  finally{btn.disabled=false;btn.textContent=(lang==='hi'?'⚔️ तुलना करें':'⚔️ Compare');}
+}
+function setCmpStatus(msg){const el=document.getElementById('cmp-status');el.textContent=msg;el.style.display=msg?'block':'none';}
+function calcScore(ch,vids){
+  const sub=Number(ch.statistics.subscriberCount||0);
+  const av=vids.length?Math.round(vids.reduce((s,v)=>s+Number(v.statistics.viewCount),0)/vids.length):0;
+  const al=vids.length?Math.round(vids.reduce((s,v)=>s+Number(v.statistics.likeCount||0),0)/vids.length):0;
+  const ac=vids.length?Math.round(vids.reduce((s,v)=>s+Number(v.statistics.commentCount||0),0)/vids.length):0;
+  const er=av>0?((al+ac)/av*100):0;
+  const tv=Number(ch.statistics.viewCount||0);
+  const dates=vids.map(v=>new Date(v.snippet.publishedAt)).sort((a,b)=>b-a);
+  const ds=vids.length>=2?(dates[0]-dates[vids.length-1])/86400000||1:1;
+  const pm=(vids.length/ds)*30;
+  const score=Math.min(100,Math.round((Math.log10(sub+1)/9)*30+(Math.log10(av+1)/7)*30+Math.min(er,10)/10*20+Math.min(pm,15)/15*20));
+  return{sub,tv,av,al,ac,er:er.toFixed(2),pm:pm.toFixed(1),score};
+}
+function renderCmp(){
+  const[d1,d2]=cmpData;const s1=calcScore(d1.ch,d1.vids),s2=calcScore(d2.ch,d2.vids);
+  const n1=d1.ch.snippet.title,n2=d2.ch.snippet.title;
+  const th1=d1.ch.snippet.thumbnails.default?.url,th2=d2.ch.snippet.thumbnails.default?.url;
+  const fields=[
+    {l:'Subscribers',k:'sub',f:true},{l:'Total Views',k:'tv',f:true},{l:'Avg Views',k:'av',f:true},
+    {l:'Avg Likes',k:'al',f:true},{l:'Engagement',k:'er',s:'%'},{l:'Uploads/Mo',k:'pm'},{l:'Score',k:'score',s:'/100'},
+  ];
+  function card(s,sO,th,name){
+    return`<div class="compare-stat-card"><div class="csc-header"><img class="csc-avatar" src="${th}" alt=""><div><div class="csc-name">${name}</div><div class="csc-handle">Score: ${s.score}/100</div></div></div>
+    ${fields.map(m=>{const v=Number(s[m.k]),vO=Number(sO[m.k]),win=v>=vO,disp=m.f?fmt(v):(v+(m.s||''));return`<div class="csc-row"><span class="csc-label">${m.l}</span><span class="csc-val ${win?'winner':'loser'}">${disp}${win?' 🏆':''}</span></div>`;}).join('')}</div>`;
+  }
+  const mS=Math.max(s1.score,s2.score,1);
+  document.getElementById('cmp-cards').innerHTML=card(s1,s2,th1,n1)+`<div class="vs-divider"><div class="vs-label">VS</div></div>`+card(s2,s1,th2,n2);
+  document.getElementById('cmp-score-wrap').innerHTML=`<div class="score-banner"><div class="score-title">OVERALL CHANNEL SCORE</div><div class="score-bars"><div class="score-bar-wrap"><div class="score-bar-num">${s1.score}</div><div class="score-bar-fill c1" style="height:${Math.round(s1.score/mS*68)}px"></div><div class="score-bar-label">${trunc(n1,14)}</div></div><div class="score-bar-wrap"><div class="score-bar-num">${s2.score}</div><div class="score-bar-fill c2" style="height:${Math.round(s2.score/mS*68)}px"></div><div class="score-bar-label">${trunc(n2,14)}</div></div></div><div class="winner-badge">🏆 Winner: ${s1.score>=s2.score?n1:n2}</div></div>`;
+  const norm=(v,m)=>m>0?Math.min(100,Math.round(v/m*100)):0;
+  const mSub=Math.max(s1.sub,s2.sub,1),mAv=Math.max(s1.av,s2.av,1),mEr=Math.max(Number(s1.er),Number(s2.er),1),mPm=Math.max(Number(s1.pm),Number(s2.pm),1),mAl=Math.max(s1.al,s2.al,1);
+  if(charts.radar)charts.radar.destroy();
+  charts.radar=new Chart(document.getElementById('cmp-radar').getContext('2d'),{
+    type:'radar',data:{labels:['Subscribers','Avg Views','Engagement','Consistency','Avg Likes','Score'],datasets:[
+      {label:trunc(n1,15),data:[norm(s1.sub,mSub),norm(s1.av,mAv),norm(Number(s1.er),mEr),norm(Number(s1.pm),mPm),norm(s1.al,mAl),s1.score],borderColor:'#ff3b3b',backgroundColor:'rgba(255,59,59,0.14)',pointBackgroundColor:'#ff3b3b'},
+      {label:trunc(n2,15),data:[norm(s2.sub,mSub),norm(s2.av,mAv),norm(Number(s2.er),mEr),norm(Number(s2.pm),mPm),norm(s2.al,mAl),s2.score],borderColor:'#00e5c0',backgroundColor:'rgba(0,229,192,0.12)',pointBackgroundColor:'#00e5c0'},
+    ]},
+    options:{responsive:true,scales:{r:{grid:{color:'rgba(255,255,255,0.06)'},pointLabels:{font:{family:'DM Mono',size:11},color:'#7a7d92'},ticks:{display:false},angleLines:{color:'rgba(255,255,255,0.06)'}}},plugins:{legend:{labels:{font:{family:'DM Mono',size:11},boxWidth:10}}}}
+  });
+  document.getElementById('cmp-result').style.display='block';
+}
+
+// ── AI ──
+document.querySelectorAll('.ai-chip').forEach(c=>c.addEventListener('click',()=>{document.querySelectorAll('.ai-chip').forEach(x=>x.classList.remove('active'));c.classList.add('active');document.getElementById('ai-input').value=c.dataset.prompt;}));
+document.getElementById('ai-btn').addEventListener('click',runAI);
+document.getElementById('ai-input').addEventListener('keydown',e=>{if(e.key==='Enter')runAI();});
+async function runAI(){
+  if(!currentVideos.length){alert(T[lang].ai_empty);return;}
+  const prompt=document.getElementById('ai-input').value.trim();if(!prompt)return;
+  const btn=document.getElementById('ai-btn');btn.disabled=true;btn.textContent='⏳';
+  const card=document.getElementById('ai-card'),body=document.getElementById('ai-body');
+  card.style.display='block';body.textContent='Thinking…';
+  const ch=currentChannel,vids=currentVideos;
+  const av=Math.round(vids.reduce((s,v)=>s+Number(v.statistics.viewCount),0)/vids.length);
+  const al=Math.round(vids.reduce((s,v)=>s+Number(v.statistics.likeCount||0),0)/vids.length);
+  const ac=Math.round(vids.reduce((s,v)=>s+Number(v.statistics.commentCount||0),0)/vids.length);
+  const er=av>0?((al+ac)/av*100).toFixed(2):0;
+  const dates=vids.map(v=>new Date(v.snippet.publishedAt)).sort((a,b)=>b-a);
+  const ds=vids.length>=2?(dates[0]-dates[vids.length-1])/86400000||1:1;
+  const pm=((vids.length/ds)*30).toFixed(1);
+  const top5=vids.slice(0,5).map(v=>`"${v.snippet.title}" (${fmt(Number(v.statistics.viewCount))} views)`).join('\n');
+  const ctx=`Channel: ${ch.snippet.title}\nSubscribers: ${fmt(Number(ch.statistics.subscriberCount||0))}\nTotal Views: ${fmt(Number(ch.statistics.viewCount))}\nTotal Videos: ${ch.statistics.videoCount}\nAvg Views/Video: ${fmt(av)}\nAvg Likes: ${fmt(al)}\nAvg Comments: ${fmt(ac)}\nEngagement Rate: ${er}%\nUploads/Month: ${pm}\nTop 5 Videos:\n${top5}\nAnalyzed: ${vids.length} videos`;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`You are an expert YouTube channel analyst. Channel data:\n\n${ctx}\n\nUser question: ${prompt}\n\nRespond in ${lang==='hi'?'Hindi':'English'} with clear, specific, actionable bullet points.`}]})});
+    const data=await res.json();
+    body.textContent=data.content?.filter(b=>b.type==='text').map(b=>b.text).join('\n')||'No response.';
+  }catch(e){body.textContent='❌ Error: '+e.message;}
+  finally{btn.disabled=false;btn.innerHTML=`🤖 <span data-t="ai_btn">${T[lang].ai_btn}</span>`;}
+}
+
+// ── UTILS ──
+function showStatus(msg,type){const el=document.getElementById('status-msg');el.textContent=msg;el.className=type;el.style.display='block';}
+function hideStatus(){document.getElementById('status-msg').style.display='none';}
+function hideAll(){
+  ['channel-info','metrics-grid','charts-section','top-videos-section','actions-section'].forEach(id=>{const el=document.getElementById(id);if(el){el.style.display='none';el.classList.remove('visible');}});
+  document.getElementById('bt-empty').style.display='block';document.getElementById('bt-content').style.display='none';
+}
+new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');}),{threshold:0.06}).observe||document.querySelectorAll('.fade-in').forEach(el=>{const io=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:0.06});io.observe(el);});
+// init io properly
+const IO=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');}),{threshold:0.06});
+document.querySelectorAll('.fade-in').forEach(el=>IO.observe(el));
+</script>
 </body>
 </html>
