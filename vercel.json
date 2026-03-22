@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/api/yt", "destination": "/api/yt.js" },
+    { "source": "/api/ai", "destination": "/api/ai.js" }
+  ]
+}
